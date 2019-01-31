@@ -1,0 +1,5 @@
+Windows 10 Telemetrie
+https://www.bsi.bund.de/DE/Themen/Cyber-Sicherheit/Empfehlungen/SiSyPHuS_Win10/SiSyPHuS_node.html
+
+ETW (Event Tracing for Windows) nutzt den Kernel Buffer
+

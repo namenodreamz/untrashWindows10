@@ -42,6 +42,54 @@ Function removeUnusedApps
     
 }
 
+#untestet
+Function setTelemetrieSettings
+{
+	#Set Telemetry Level to lowest Settings
+	Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection\ -name AllowTelemetry -Value 0
+	#Deactovate Telemetry Service and ETW-Sessions
+	Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\DiagTrack\ -name Start -Value 4
+	Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\WMI\Autologger\AutoLogger-Diagtrack-Listener\ -nameStart -Value 0
+	#deactivate wuauserver #only if WSUS server is available
+	#Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\wuauserv\ -name Start -Value 4
+	
+	
+	#Set Firewall Rule to block DiagTrack 
+	
+	# Besitzer der Datei aendern
+	$Account = New-Object -TypeName System.Security.Principal.NTAccount -ArgumentList 'VORDEFINIERT\Administratoren';
+	$ACL = $null
+	$ACL = Get-Acl -Path C:\Windows\System32\svchost.exe
+	$ACL.SetOwner($Account)
+	Set-Acl -Path C:\Windows\System32\svchost.exe -AclObject $ACL
+	# Abfrage der Access Control Liste
+	$ACL = $null
+	$ACL = Get-Acl C:\Windows\System32\svchost.exe
+	# Zugriffsrechte setzen
+	$Ar = New-Object System.Security.AccessControl.FileSystemAccessRule($Account, "Write", "Allow")
+	$ACL.SetAccessRule($Ar)
+	Set-Acl C:\Windows\System32\svchost.exe $ACL
+	# Wechsle in Zielverzeichnis
+	Set-Location -Path C:\Windows\System32\
+	# Erstellung Hardlink
+	New-Item -ItemType hardlink -Name hard.exe -Value .\svchost.exe
+	
+	# Anpassung der Registry
+	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\DiagTrack" -Name "ImagePath" -Value "%SystemRoot%\System32\hard.exe -k utcsvc"
+	# Hinzufuegen der Firewall Regel
+	New-NetFirewallRule -DisplayName "Block_Diagtrack" -Name "Block_Diagtrack" -Direction Outbound -Program "%SystemRoot%\System32\hard.exe"
+	
+	#New-NetFirewallRule -DisplayName "BlockDiagTrack" -Name "BlockDiagTrack" -Direction Outbound -Program "%SystemRoot%\System32\utc_myhost.exe" -Action block
+	
+	
+	#Block DNS Adresses für Telemetry
+	#Add-Content $env:SystemRoot\System32\drivers\etc "0.0.0.0 geo.settings-win.data.microsoft.com.akadns.net" #throws "wurde verweigert" at the moment
+	
+	
+	
+	
+}
+
 #Remove One Drive Completely
 Functoin removeOneDrive
 {
